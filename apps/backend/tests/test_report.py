@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
@@ -41,3 +42,42 @@ def test_report_pdf_endpoint():
     response = client.post("/api/report/report-pdf", json=report_data)
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"
+
+
+def test_report_pdf_endpoint_removes_temp_file(tmp_path, monkeypatch):
+    temp_pdf = tmp_path / "report.pdf"
+
+    class DummyTempFile:
+        def __init__(self, path: Path):
+            self.name = str(path)
+            self._file = path.open("wb")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            self._file.close()
+
+    class FakeHTML:
+        def __init__(self, string: str):
+            self.string = string
+
+        def write_pdf(self, path: str):
+            Path(path).write_bytes(b"%PDF-1.4 fake")
+
+    monkeypatch.setattr("app.routers.reports.tempfile.NamedTemporaryFile", lambda **kwargs: DummyTempFile(temp_pdf))
+    monkeypatch.setattr("app.routers.reports.HTML", FakeHTML)
+
+    report_data = {
+        "report_data": {
+            "asl_parameters": [("param1", "value1")],
+            "missing_parameters": [],
+            "basic_report": "Basic report",
+            "extended_report": "Extended report",
+        }
+    }
+
+    response = client.post("/api/report/report-pdf", json=report_data)
+
+    assert response.status_code == 200
+    assert not temp_pdf.exists()

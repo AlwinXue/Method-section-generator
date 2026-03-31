@@ -4,6 +4,7 @@ import uuid
 import tempfile
 import pydicom
 from fastapi import APIRouter, HTTPException, status, File, Form, UploadFile
+from starlette.background import BackgroundTask
 from typing import List, Optional
 from .data import data
 from pyaslreport import generate_report, get_bids_metadata
@@ -129,5 +130,10 @@ async def download_pdf(report_data: dict):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
         HTML(string=html_content).write_pdf(tmp.name)
         tmp_path = tmp.name
-    return FileResponse(tmp_path, media_type="application/pdf", filename="report.pdf")
+    return FileResponse(
+        tmp_path,
+        media_type="application/pdf",
+        filename="report.pdf",
+        background=BackgroundTask(os.remove, tmp_path)
+    )
 
