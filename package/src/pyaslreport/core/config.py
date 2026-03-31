@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 from pyaslreport.io.readers.yaml_reader import YamlReader
 
@@ -51,12 +52,25 @@ class Config:
         """
         allowed_file_types = YamlReader.read(self.allowed_file_types_path)
         schemas = self._load_schemas()
+        paths = self._normalize_temp_paths(allowed_file_types['paths'])
 
         return {
             'allowed_file_type': allowed_file_types['allowed_file_types'],
-            'paths': allowed_file_types['paths'],
+            'paths': paths,
             'schemas': schemas
         }
+
+    def _normalize_temp_paths(self, paths: dict) -> dict:
+        normalized_paths = {}
+        temp_dir = tempfile.gettempdir()
+
+        for key, path in paths.items():
+            if isinstance(path, str) and path.startswith("/tmp/"):
+                normalized_paths[key] = os.path.join(temp_dir, path.removeprefix("/tmp/"))
+            else:
+                normalized_paths[key] = path
+
+        return normalized_paths
 
 
 # Global config instance
