@@ -23,12 +23,12 @@ def test_get_report_dicom_with_invalid_file(tmp_path):
     file_path.write_text("not a dicom")
     with open(file_path, "rb") as f:
         response = client.post(
-            "/report/process/dicom",
+            "/api/report/process/dicom",
             files={"dcm_files": ("not_a_dicom.txt", f, "text/plain")},
             data={"modality": "ASL"}
         )
-    # Should still return 500 due to invalid dicom
-    assert response.status_code in [500, 200]
+    assert response.status_code == 400
+    assert response.json()["detail"] == "No valid DICOM files provided"
 
 def test_report_pdf_endpoint():
     # Minimal valid report_data for rendering

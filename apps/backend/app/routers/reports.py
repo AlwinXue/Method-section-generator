@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, status, File, Form, UploadFile
 from typing import List, Optional
 from .data import data
 from pyaslreport import generate_report, get_bids_metadata
+from pyaslreport.main import get_dicom_header
 from pyaslreport.enums import ModalityTypeValues
 from fastapi.responses import FileResponse
 from weasyprint import HTML
@@ -88,6 +89,16 @@ async def get_report_dicom(
             await save_upload(file, base_dir=data["dicom_dir"])
         except Exception as e:
             print(f"Error reading DICOM file {file.filename}: {e}")
+
+    try:
+        get_dicom_header(data["dicom_dir"])
+    except (TypeError, ValueError, OSError, FileNotFoundError) as e:
+        print(f"Invalid DICOM upload: {e}")
+        await remove_dir(base_dir)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No valid DICOM files provided"
+        )
 
     try:
         metadata, asl_context = get_bids_metadata(data)
