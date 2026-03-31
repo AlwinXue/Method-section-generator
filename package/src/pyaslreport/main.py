@@ -30,10 +30,7 @@ def get_bids_metadata(data):
     dicom_dir = data.get("dicom_dir")
     dicom_header = get_dicom_header(dicom_dir)
     sequence = get_sequence(modality, dicom_header)
-    
-    if sequence is None:
-        raise ValueError(f"No matching sequence found for modality '{modality}' with the provided DICOM header")
-    
+
     return sequence.extract_bids_metadata()
 
 
