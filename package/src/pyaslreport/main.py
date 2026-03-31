@@ -46,24 +46,16 @@ def get_dicom_header(dicom_dir: str):
     # Get all files in the directory
     all_files = [f for f in os.listdir(dicom_dir) if os.path.isfile(os.path.join(dicom_dir, f))]
     
-    # Try to find DICOM files by attempting to read them with pydicom
-    dcm_files = []
+    # Return the first readable DICOM header instead of scanning the whole directory
+    # and reading the winning file a second time.
     for file in all_files:
         file_path = os.path.join(dicom_dir, file)
         try:
-            # Try to read the file as DICOM
-            pydicom.dcmread(file_path, stop_before_pixels=True)
-            dcm_files.append(file)
+            dcm_header = pydicom.dcmread(file_path, stop_before_pixels=True)
+            log.info(f"Found a readable DICOM file in {dicom_dir}: {file}")
+            return dcm_header
         except (InvalidDicomError, OSError, PermissionError):
             # File is not a valid DICOM file or cannot be read
             continue
 
-    log.info(f"Found {len(dcm_files)} DICOM files in {dicom_dir}")
-
-    if not dcm_files:
-        raise ValueError(f"No DICOM files found in directory: {dicom_dir}")
-    
-    # Read the first valid DICOM file
-    dcm_header = pydicom.dcmread(os.path.join(dicom_dir, dcm_files[0]))
-    
-    return dcm_header
+    raise ValueError(f"No DICOM files found in directory: {dicom_dir}")
