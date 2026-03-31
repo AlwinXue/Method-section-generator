@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 import pydicom
@@ -24,7 +25,9 @@ class DICOM2NiFTIConverter:
         series_repetitions = {}
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            for dcm_file in dcm_files:
+            for index, dcm_file in enumerate(dcm_files):
+                temp_file_path = os.path.join(temp_dir, f"{index}_{os.path.basename(dcm_file)}")
+                shutil.copy2(dcm_file, temp_file_path)
 
                 ds = pydicom.dcmread(dcm_file)
                 series_number_tag = ds.get((0x0020, 0x0011), None)
