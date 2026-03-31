@@ -41,3 +41,15 @@ def test_report_pdf_endpoint():
     response = client.post("/api/report/report-pdf", json=report_data)
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"
+
+
+def test_report_pdf_endpoint_uses_missing_required_parameters():
+    report_data = {
+        "report_data": {
+            "asl_parameters": {"param1": "value1"},
+            "missing_required_parameters": {"PostLabelingDelay": "ms"},
+        }
+    }
+    response = client.post("/api/report/report-pdf", json=report_data)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
