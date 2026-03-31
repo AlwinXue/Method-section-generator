@@ -12,6 +12,13 @@ def test_get_report_bids_no_files():
     assert response.status_code == 200
     assert isinstance(response.json(), dict)
 
+
+def test_get_report_bids_invalid_modality():
+    response = client.post("/api/report/process/bids", data={"modality": "INVALID"})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Unsupported modality: INVALID"
+
+
 def test_get_report_dicom_no_files():
     response = client.post("/api/report/process/dicom", data={"modality": "ASL"})
     assert response.status_code == 400

@@ -18,6 +18,19 @@ report_router = APIRouter(prefix="/report")
 # create the uploads directory if it doesn't exist
 os.makedirs("uploads", exist_ok=True)
 
+
+def parse_modality(modality: Optional[str]) -> ModalityTypeValues:
+    if not modality:
+        return ModalityTypeValues.ASL
+
+    try:
+        return ModalityTypeValues(modality)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported modality: {modality}"
+        ) from exc
+
 @report_router.post("/process/bids", response_model=dict, status_code=status.HTTP_200_OK)
 async def get_report_bids(
         modality: Optional[str] = Form(None),
@@ -29,7 +42,7 @@ async def get_report_bids(
     Receives form data and two files: a NIfTI file and a DICOM file.
     """
     data = {
-        "modality": ModalityTypeValues(modality) if modality else ModalityTypeValues.ASL,
+        "modality": parse_modality(modality),
         "files": [],
         "nifti_file": None,
         "dcm_files": []
@@ -76,7 +89,7 @@ async def get_report_dicom(
     print(base_dir)
 
     data = {
-        "modality": ModalityTypeValues(modality) if modality else ModalityTypeValues.ASL,
+        "modality": parse_modality(modality),
         "dicom_dir": f"{base_dir}/dicom"
     }
 
